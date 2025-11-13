@@ -32,16 +32,6 @@ Rules Engine: JSON-based severity definitions
 Environment: .env with GCP credentials
 
 
-📦 Project Structure
-ingredient-shield/
-│
-├── main.py                 # Core API logic
-├── rules.json              # Condition rules (avoid/caution)
-├── index.html              # Frontend UI
-├── static/                 # CSS, JS, assets
-├── requirements.txt
-└── .env                    # GCP credentials path
-
 
 ⚙️ Setup Instructions
 1️⃣ Clone the repository
