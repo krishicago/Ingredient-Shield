@@ -1,0 +1,942 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Ingredient Shield – OCR Safety Checker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        --bg: #f5f7fb;
+        --card: #ffffff;
+        --border-subtle: #e2e8f0;
+        --accent: #14b8a6;
+        --accent-soft: rgba(20, 184, 166, 0.08);
+        --text-main: #0f172a;
+        --text-soft: #6b7280;
+        --danger: #ef4444;
+        --danger-soft: rgba(239, 68, 68, 0.08);
+        --warn: #f59e0b;
+        --warn-soft: rgba(245, 158, 11, 0.08);
+        --safe: #22c55e;
+        --safe-soft: rgba(34, 197, 94, 0.08);
+        --radius-lg: 18px;
+        --radius-md: 12px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", sans-serif;
+        background: radial-gradient(circle at top, #dbeafe, #f9fafb 55%);
+        color: var(--text-main);
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 24px;
+      }
+
+      .shell {
+        width: 100%;
+        max-width: 1180px;
+      }
+
+      header {
+        margin-bottom: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .brand-logo {
+        width: 34px;
+        height: 34px;
+        border-radius: 12px;
+        background: conic-gradient(
+          from 160deg,
+          #22c55e,
+          #22c55e,
+          #14b8a6,
+          #0ea5e9,
+          #22c55e
+        );
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 16px;
+        box-shadow: 0 10px 28px rgba(34, 197, 94, 0.35);
+      }
+
+      .brand-text h1 {
+        margin: 0;
+        font-size: 1.25rem;
+        letter-spacing: 0.02em;
+      }
+
+      .brand-text p {
+        margin: 2px 0 0;
+        font-size: 0.78rem;
+        color: var(--text-soft);
+      }
+
+      .chip {
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 0.74rem;
+        border: 1px solid rgba(20, 184, 166, 0.25);
+      }
+
+      main {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.2fr);
+        gap: 18px;
+      }
+
+      @media (max-width: 900px) {
+        main {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      .card {
+        background: var(--card);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-subtle);
+        box-shadow: 0 18px 48px rgba(148, 163, 184, 0.22);
+        padding: 18px 20px 16px;
+        min-height: 420px;
+      }
+
+      .pane-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      .pane-subtitle {
+        font-size: 0.82rem;
+        color: var(--text-soft);
+        margin-bottom: 14px;
+      }
+
+      .field-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--text-soft);
+        margin-bottom: 6px;
+      }
+
+      .dropzone {
+        border-radius: var(--radius-md);
+        border: 1px dashed #cbd5f5;
+        background: linear-gradient(
+          135deg,
+          rgba(219, 234, 254, 0.85),
+          rgba(240, 253, 244, 0.85)
+        );
+        padding: 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        transition: border-color 0.15s ease, transform 0.08s ease,
+          box-shadow 0.15s ease;
+      }
+
+      .dropzone:hover {
+        border-color: var(--accent);
+        transform: translateY(-1px);
+        box-shadow: 0 10px 26px rgba(148, 163, 184, 0.4);
+      }
+
+      .dropzone-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 999px;
+        background: white;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--accent);
+        font-size: 20px;
+        flex-shrink: 0;
+        box-shadow: 0 10px 24px rgba(148, 163, 184, 0.35);
+      }
+
+      .dropzone-text strong {
+        font-size: 0.88rem;
+      }
+
+      .dropzone-text span {
+        display: block;
+        font-size: 0.78rem;
+        color: var(--text-soft);
+      }
+
+      input[type="file"] {
+        display: none;
+      }
+
+      .thumb {
+        margin-top: 10px;
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        border: 1px solid var(--border-subtle);
+        max-height: 180px;
+        background: #f9fafb;
+      }
+
+      .thumb img {
+        width: 100%;
+        display: block;
+        object-fit: cover;
+      }
+
+      .helper-text {
+        margin-top: 4px;
+        font-size: 0.74rem;
+        color: var(--text-soft);
+      }
+
+      .conditions-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 8px;
+        margin-top: 4px;
+      }
+
+      .pill {
+        border-radius: 999px;
+        border: 1px solid #e2e8f0;
+        padding: 6px 11px;
+        font-size: 0.8rem;
+        color: var(--text-soft);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        background: #f9fafb;
+        transition: border-color 0.15s ease, background 0.15s ease,
+          color 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease;
+      }
+
+      .pill .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: #cbd5f5;
+      }
+
+      .pill.active {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+        color: var(--accent);
+        box-shadow: 0 6px 18px rgba(20, 184, 166, 0.25);
+        transform: translateY(-1px);
+      }
+
+      .pill.active .dot {
+        background: var(--accent);
+      }
+
+      .what-checked {
+        font-size: 0.78rem;
+        color: var(--text-soft);
+        margin-top: 4px;
+      }
+
+      .what-checked span {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #f1f5f9;
+        margin-right: 4px;
+        margin-bottom: 4px;
+      }
+
+      button {
+        padding: 8px 16px;
+        border-radius: 999px;
+        border: 1px solid #cbd5f5;
+        background: linear-gradient(to right, #22c55e, #14b8a6);
+        color: white;
+        font-size: 0.82rem;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: transform 0.08s ease, box-shadow 0.15s ease,
+          filter 0.1s ease;
+        margin-top: 14px;
+      }
+
+      button:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 32px rgba(34, 197, 94, 0.4);
+        filter: brightness(1.02);
+      }
+
+      button:disabled {
+        opacity: 0.7;
+        cursor: default;
+        box-shadow: none;
+        filter: grayscale(0.1);
+      }
+
+      .button-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.85);
+      }
+
+      .error {
+        margin-top: 8px;
+        font-size: 0.8rem;
+        color: var(--danger);
+      }
+
+      .result-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+
+      .result-main {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .score {
+        font-size: 0.78rem;
+        color: var(--text-soft);
+      }
+
+      .badge {
+        padding: 4px 11px;
+        border-radius: 999px;
+        font-size: 0.74rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+      }
+
+      .badge.safe {
+        background: var(--safe-soft);
+        color: var(--safe);
+      }
+
+      .badge.caution {
+        background: var(--warn-soft);
+        color: var(--warn);
+      }
+
+      .badge.avoid {
+        background: var(--danger-soft);
+        color: var(--danger);
+      }
+
+      .product-preview {
+        width: 130px;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border-subtle);
+        overflow: hidden;
+        background: #f9fafb;
+        flex-shrink: 0;
+      }
+
+      .product-preview img {
+        width: 100%;
+        display: block;
+        object-fit: cover;
+        height: 96px;
+      }
+
+      .product-preview-caption {
+        font-size: 0.7rem;
+        color: var(--text-soft);
+        padding: 4px 6px 6px;
+        text-align: center;
+      }
+
+      .section {
+        margin-top: 10px;
+      }
+
+      .section-title {
+        font-size: 0.83rem;
+        font-weight: 500;
+        margin-bottom: 4px;
+      }
+
+      .section-sub {
+        font-size: 0.76rem;
+        color: var(--text-soft);
+        margin-bottom: 4px;
+      }
+
+      .summary-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--text-soft);
+        margin-bottom: 4px;
+      }
+
+      .reasons {
+        margin: 6px 0 4px;
+        padding-left: 18px;
+        font-size: 0.8rem;
+        color: var(--text-soft);
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        border-radius: 999px;
+        padding: 3px 8px;
+        font-size: 0.72rem;
+        border: 1px solid #e2e8f0;
+        color: var(--text-soft);
+        background: #f9fafb;
+      }
+
+      .tag-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: #a5b4fc;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 8px;
+        font-size: 0.78rem;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid #e5e7eb;
+        padding: 6px 4px;
+        vertical-align: top;
+      }
+
+      th {
+        text-align: left;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--text-soft);
+      }
+
+      td a {
+        color: var(--accent);
+        text-decoration: none;
+        font-size: 0.76rem;
+      }
+
+      td a:hover {
+        text-decoration: underline;
+      }
+
+      .research-shortcuts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        font-size: 0.74rem;
+        margin-top: 4px;
+      }
+
+      .research-chip {
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        color: var(--text-soft);
+      }
+
+      .disclaimer {
+        margin-top: 10px;
+        font-size: 0.72rem;
+        color: var(--text-soft);
+      }
+
+      .empty-state {
+        font-size: 0.8rem;
+        color: var(--text-soft);
+        border-radius: var(--radius-md);
+        border: 1px dashed #e2e8f0;
+        padding: 10px 12px;
+        background: #f9fafb;
+        margin-top: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header>
+        <div class="brand">
+          <div class="brand-logo">is</div>
+          <div class="brand-text">
+            <h1>Ingredient Shield</h1>
+            <p>OCR-powered ingredient safety for everyday products.</p>
+          </div>
+        </div>
+        <span class="chip">Prototype · FastAPI + Google Vision</span>
+      </header>
+
+      <main>
+        <!-- LEFT: Input / controls -->
+        <section class="card">
+          <div class="pane-title">Scan a label</div>
+          <div class="pane-subtitle">
+            Upload a close-up of the ingredients list and select health profiles
+            to check against.
+          </div>
+
+          <form id="form">
+            <div class="field-label">Product image</div>
+            <label class="dropzone" id="dropzone">
+              <div class="dropzone-icon">📷</div>
+              <div class="dropzone-text">
+                <strong>Click to select an image</strong>
+                <span>High contrast, cropped to the ingredients section works best.</span>
+              </div>
+              <input
+                type="file"
+                name="image"
+                id="image-input"
+                accept="image/*"
+                required
+              />
+            </label>
+            <div class="thumb" id="thumb" style="display: none">
+              <img id="thumb-img" alt="Preview" />
+            </div>
+            <div class="helper-text">
+              Your image is processed by the API for OCR and ingredient parsing.
+            </div>
+
+            <div style="margin-top: 16px">
+              <div class="field-label">Health conditions</div>
+              <div class="conditions-row" id="conditions-row"></div>
+              <div class="helper-text">
+                Choose the profiles we should check against this product.
+              </div>
+              <div class="what-checked" id="what-checked">
+                No profiles selected yet.
+              </div>
+            </div>
+
+            <button type="submit" id="btn">
+              <span class="button-dot"></span>
+              <span>Analyze ingredients</span>
+            </button>
+
+            <div id="error" class="error"></div>
+          </form>
+        </section>
+
+        <!-- RIGHT: Results -->
+        <section class="card">
+          <div class="result-header">
+            <div class="result-main">
+              <div class="pane-title">Safety verdict</div>
+              <div class="score" id="score-label">
+                Upload a label and run the analysis to see how this product
+                scores.
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: flex-start">
+              <div id="badge" class="badge safe" style="display: none">
+                SAFE
+              </div>
+              <div
+                class="product-preview"
+                id="product-preview"
+                style="display: none"
+              >
+                <img id="preview-img" alt="Product" />
+                <div class="product-preview-caption">Scanned label</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">What we checked</div>
+            <div class="section-sub">
+              These health profiles are used when scoring this product.
+            </div>
+            <div class="what-checked" id="what-checked-result">
+              No profiles selected yet.
+            </div>
+          </div>
+
+          <div class="section">
+            <div id="summary-block"></div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Detailed risk signals</div>
+            <div id="reasons-block"></div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Ingredients & research</div>
+            <div class="section-sub">
+              Explore each ingredient using science and open data sources.
+            </div>
+            <div class="research-shortcuts">
+              <span class="research-chip">🔍 Google</span>
+              <span class="research-chip">🌐 OpenFoodFacts</span>
+              <span class="research-chip">🔬 PubChem</span>
+              <span class="research-chip">📚 MedlinePlus</span>
+            </div>
+            <div id="ingredients-block"></div>
+          </div>
+
+          <div id="disclaimer" class="disclaimer">
+            This is an experimental tool for information only and is not a
+            substitute for professional medical advice. Always consult a
+            qualified healthcare provider before making decisions about your
+            health.
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      // 👇 Change this when you deploy the backend
+      const API_URL = "http://127.0.0.1:8000/analyze";
+
+      const form = document.getElementById("form");
+      const btn = document.getElementById("btn");
+      const errorBox = document.getElementById("error");
+
+      const badge = document.getElementById("badge");
+      const scoreLabel = document.getElementById("score-label");
+      const reasonsBlock = document.getElementById("reasons-block");
+      const ingredientsBlock = document.getElementById("ingredients-block");
+      const disclaimerEl = document.getElementById("disclaimer");
+      const summaryBlock = document.getElementById("summary-block");
+
+      const thumb = document.getElementById("thumb");
+      const thumbImg = document.getElementById("thumb-img");
+      const previewImg = document.getElementById("preview-img");
+      const productPreview = document.getElementById("product-preview");
+
+      const imageInput = document.getElementById("image-input");
+      const dropzone = document.getElementById("dropzone");
+
+      const conditionsRow = document.getElementById("conditions-row");
+      const whatChecked = document.getElementById("what-checked");
+      const whatCheckedResult = document.getElementById("what-checked-result");
+
+      const CONDITIONS = [
+        { id: "celiac", label: "Celiac" },
+        { id: "nut_allergy", label: "Nut allergy" },
+        { id: "lactose_intolerance", label: "Lactose intolerance" },
+        { id: "diabetes", label: "Diabetes" },
+        { id: "soy_allergy", label: "Soy allergy" },
+      ];
+
+      const selectedConditions = new Set();
+
+      // Render condition pills as toggle buttons
+      CONDITIONS.forEach((cond) => {
+        const pill = document.createElement("button");
+        pill.type = "button";
+        pill.className = "pill";
+        pill.dataset.id = cond.id;
+        pill.innerHTML = `
+          <span class="dot"></span>
+          <span>${cond.label}</span>
+        `;
+
+        pill.addEventListener("click", () => {
+          const id = cond.id;
+          if (selectedConditions.has(id)) {
+            selectedConditions.delete(id);
+            pill.classList.remove("active");
+          } else {
+            selectedConditions.add(id);
+            pill.classList.add("active");
+          }
+          updateWhatChecked();
+        });
+
+        conditionsRow.appendChild(pill);
+      });
+
+      function updateWhatChecked() {
+        const conds = Array.from(selectedConditions);
+        if (!conds.length) {
+          whatChecked.textContent = "No profiles selected yet.";
+          whatCheckedResult.textContent = "No profiles selected yet.";
+          return;
+        }
+
+        const chips = conds
+          .map((id) => {
+            const cfg = CONDITIONS.find((c) => c.id === id);
+            const label = cfg ? cfg.label : id;
+            return `<span>● ${label}</span>`;
+          })
+          .join("");
+
+        whatChecked.innerHTML = chips;
+        whatCheckedResult.innerHTML = chips;
+      }
+
+      // Image preview (left + product preview on right)
+      imageInput.addEventListener("change", () => {
+        const file = imageInput.files[0];
+        if (!file) {
+          thumb.style.display = "none";
+          productPreview.style.display = "none";
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          thumbImg.src = e.target.result;
+          previewImg.src = e.target.result;
+          thumb.style.display = "block";
+          productPreview.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+      });
+
+      dropzone.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          imageInput.click();
+        }
+      });
+
+      dropzone.addEventListener("click", () => {
+        imageInput.click();
+      });
+
+      // Submit: call backend
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        errorBox.textContent = "";
+        reasonsBlock.innerHTML = "";
+        ingredientsBlock.innerHTML = "";
+        summaryBlock.innerHTML = "";
+
+        const file = imageInput.files[0];
+        if (!file) {
+          errorBox.textContent = "Please select an image.";
+          return;
+        }
+
+        const conds = Array.from(selectedConditions);
+
+        btn.disabled = true;
+        btn.innerHTML =
+          '<span class="button-dot"></span><span>Analyzing…</span>';
+
+        const fd = new FormData();
+        fd.append("image", file);
+        fd.append("conditions", JSON.stringify(conds));
+
+        try {
+          const res = await fetch(API_URL, {
+            method: "POST",
+            body: fd,
+          });
+
+          const data = await res.json();
+          renderResult(data, conds);
+        } catch (err) {
+          console.error(err);
+          errorBox.textContent =
+            "Error calling API. Check that the backend is running.";
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML =
+            '<span class="button-dot"></span><span>Analyze ingredients</span>';
+        }
+      });
+
+      function renderResult(data, condsUsed) {
+        const verdict = (data.verdict || "Unknown").toLowerCase();
+        badge.style.display = "inline-flex";
+        badge.textContent = (data.verdict || "Unknown").toUpperCase();
+        badge.classList.remove("safe", "caution", "avoid");
+
+        if (verdict === "avoid") {
+          badge.classList.add("avoid");
+        } else if (verdict === "caution") {
+          badge.classList.add("caution");
+        } else {
+          badge.classList.add("safe");
+        }
+
+        const score = data.score ?? 0;
+        scoreLabel.textContent = `Score: ${score}/100`;
+
+        const reasons = data.reasons || [];
+
+        // ---- “What we checked” on result side ----
+        if (condsUsed && condsUsed.length) {
+          const chips = condsUsed
+            .map((id) => {
+              const cfg = CONDITIONS.find((c) => c.id === id);
+              const label = cfg ? cfg.label : id;
+              return `<span>● ${label}</span>`;
+            })
+            .join("");
+          whatCheckedResult.innerHTML = chips;
+        } else {
+          whatCheckedResult.textContent =
+            "No specific profiles; using general ingredient safety rules.";
+        }
+
+        // ---- Short risk summary ----
+        if (reasons.length) {
+          const grouped = {};
+          for (const r of reasons) {
+            const key = `${r.condition}|${r.severity}`;
+            if (!grouped[key]) {
+              grouped[key] = {
+                condition: r.condition,
+                severity: r.severity,
+                ingredients: new Set(),
+              };
+            }
+            grouped[key].ingredients.add(r.ingredient);
+          }
+
+          const lines = Object.values(grouped).map((g) => {
+            const ingList = Array.from(g.ingredients).join(", ");
+            const sev =
+              g.severity === "avoid"
+                ? "Avoid"
+                : g.severity === "caution"
+                ? "Use with caution"
+                : g.severity;
+            return `<li>${sev} for <strong>${g.condition}</strong> due to ${ingList}.</li>`;
+          });
+
+          summaryBlock.innerHTML = `
+            <div class="summary-label">Risk summary</div>
+            <ul class="reasons" style="margin-top:4px;">${lines.join("")}</ul>
+          `;
+        } else {
+          summaryBlock.innerHTML = `
+            <div class="empty-state">
+              No major risks detected for the selected profiles.
+            </div>`;
+        }
+
+        // ---- Detailed reasons ----
+        if (reasons.length) {
+          const items = reasons
+            .map(
+              (r) => `
+              <li>
+                ${r.ingredient} →
+                <span class="tag">
+                  <span class="tag-dot"></span>${r.condition} (${r.severity})
+                </span>
+              </li>`
+            )
+            .join("");
+          reasonsBlock.innerHTML = `<ul class="reasons">${items}</ul>`;
+        } else {
+          reasonsBlock.innerHTML = `
+            <div class="empty-state">
+              No specific risk matches for the selected conditions.
+            </div>`;
+        }
+
+        // ---- Ingredients + research shortcuts ----
+        const ingredients = data.ingredients || [];
+        if (ingredients.length) {
+          const rows = ingredients
+            .map((i) => {
+              const name = i.name;
+              const q = encodeURIComponent(name);
+
+              const extra = [
+                { title: "Google", url: `https://www.google.com/search?q=${q}` },
+              ];
+
+              const allLinks = [
+                ...extra,
+                ...(i.links || []),
+              ]
+                .map(
+                  (l) =>
+                    `<a href="${l.url}" target="_blank" rel="noopener noreferrer">${l.title}</a>`
+                )
+                .join(" • ");
+
+              return `<tr>
+                <td>${name}</td>
+                <td>${allLinks}</td>
+              </tr>`;
+            })
+            .join("");
+
+          ingredientsBlock.innerHTML = `
+            <table>
+              <thead>
+                <tr><th>Ingredient</th><th>Research</th></tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          `;
+        } else {
+          ingredientsBlock.innerHTML = "";
+        }
+
+        // ---- Disclaimer (base + backend) ----
+        const BASE_DISCLAIMER =
+          "This is an experimental tool for information only and is not a substitute for professional medical advice. Always consult a qualified healthcare provider before making decisions about your health.";
+        if (data.disclaimer) {
+          disclaimerEl.textContent = `${BASE_DISCLAIMER} ${data.disclaimer}`;
+        } else {
+          disclaimerEl.textContent = BASE_DISCLAIMER;
+        }
+      }
+
+      // Initial state
+      reasonsBlock.innerHTML = `
+        <div class="empty-state">
+          Once you run an analysis, we’ll highlight specific ingredients that may be risky for the selected profiles.
+        </div>`;
+    </script>
+  </body>
+</html>

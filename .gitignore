@@ -1,0 +1,4 @@
+
+# Do NOT commit secret keys
+*.json
+.env
