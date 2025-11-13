@@ -56,24 +56,34 @@ export $(grep -v '^#' .env | xargs)
 uvicorn main:app --reload
 
 ###5️⃣ Test API (Swagger UI)
+Open:
+http://127.0.0.1:8000/docs
 
 ###6️⃣ Use the Frontend
 Open index.html in your browser.
 
 
+```
 
-## API returns:
 
-verdict
+🧪 Sample API Usage
 
-score
+POST /analyze
 
-reasons
+```
+curl -X POST "http://127.0.0.1:8000/analyze" \
+  -F "image=@sample.jpg" \
+  -F 'conditions=["soy_allergy","diabetes"]'
 
-ingredients with research links
+```
+---
+## 🔍 API returns:
 
-ocr_text
-
-disclaimer
+- verdict
+- score
+- reasons
+- ingredients with research links
+- ocr_text
+- disclaimer
 git clone https://github.com/<your-username>/ingredient-shield.git
 cd ingredient-shield
