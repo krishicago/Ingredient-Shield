@@ -21,17 +21,27 @@ The application returns a clear safety verdict, score, risk factors, and researc
 
 ## 🧱 System Architecture
 
-User Upload Image
-↓
-Frontend (index.html)
-↓ POST /analyze
-FastAPI Backend
-↓
-Google Vision OCR → Parsed Ingredients → Rule Engine
-↓
-Safety Verdict + Score + Summary + Research Links
-↓
-Frontend Results UI
+flowchart LR
+    U[User] --> UI[Frontend UI<br/>(index.html + JS)]
+    UI -->|Upload image| API[(POST /analyze)]
+
+    subgraph Backend [Backend (FastAPI)]
+        API --> FE[FastAPI /analyze endpoint]
+        FE --> OCR[Google Vision OCR Client]
+        OCR --> PARSE[Ingredient Parsing & Normalization]
+        PARSE --> RULE[Rule Engine<br/>(Allergies & Conditions)]
+        RULE --> RESP[Response Builder<br/>(Verdict, Score, Summary, Links)]
+    end
+
+    subgraph GCP [Google Cloud]
+        VISION[Google Cloud Vision API]
+    end
+
+    OCR <--> |OCR request/response| VISION
+
+    RESP --> UIRES[Results UI<br/>(Verdict, Score, Ingredients Table)]
+    UIRES --> U
+
 
 
 ---
