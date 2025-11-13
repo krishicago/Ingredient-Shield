@@ -1,98 +1,79 @@
-🛡️ Ingredient Shield
-OCR-Driven Ingredient Parsing & Health-Condition Risk Assessment System
+# 🛡️ Ingredient Shield  
+### OCR-Powered Ingredient Risk Analysis for Allergies & Health Conditions
 
-Ingredient Shield is a FastAPI-based backend that uses Google Cloud Vision OCR to extract ingredients from product label images, then evaluates them against user-selected health conditions using a rule-based risk engine. It returns structured safety analysis including a verdict, score, risk factors, and research shortcuts.
+Ingredient Shield is an AI-powered system that extracts ingredient lists from product images using **Google Cloud Vision OCR**, parses them with a custom ingredient normalization engine, and evaluates risk based on user-selected health conditions (e.g., soy allergy, diabetes).  
+The application returns a clear safety verdict, score, risk factors, and research links — all served through a **FastAPI backend** and a **clean web UI**.
 
-🔍 Features
-Image OCR using Google Cloud Vision
-Ingredient Parsing Engine (regex cleanup, normalization, alias mapping)
-Configurable Rule Engine for allergies & conditions
-Safety Score + Risk Verdict
-Research Metadata with OpenFoodFacts, PubChem, and MedlinePlus links
-Modern Web UI (two-column layout, upload + results panel)
+---
+
+## 📌 Features
+
+- 🔍 **Google Vision OCR** to extract ingredients from any food label  
+- 🧪 **Ingredient Parsing Engine** (regex cleanup, alias mapping, deduplication)  
+- ⚠️ **Rule-Based Risk Model** driven by `rules.json`  
+- 🛡 **Safety Verdict System:** Safe / Caution / Avoid  
+- 📊 **100-Point Score** with severity-based deductions  
+- 📝 **Risk Explanation** mapped to each matched ingredient  
+- 🔗 **Research Shortcuts** to OpenFoodFacts, PubChem, MedlinePlus  
+- 💻 **Modern Two-Column UI** with upload, preview, and results panel  
+
+---
+
+## 🧱 System Architecture
+
+User Upload Image
+↓
+Frontend (index.html)
+↓ POST /analyze
+FastAPI Backend
+↓
+Google Vision OCR → Parsed Ingredients → Rule Engine
+↓
+Safety Verdict + Score + Summary + Research Links
+↓
+Frontend Results UI
 
 
-API-driven architecture ready for deployment
+---
 
-🧱 System Architecture
-User Upload → Frontend → FastAPI → Google Vision OCR
-                         ↓
-                Ingredient Parser
-                         ↓
-                   Rule Evaluator
-                         ↓
-              JSON Safety Assessment
+## ⚙️ Setup Instructions
 
-🗂️ Tech Stack
-
-Backend: FastAPI (Python)
-OCR: Google Cloud Vision API
-Frontend: HTML, CSS, JS
-Rules Engine: JSON-based severity definitions
-Environment: .env with GCP credentials
-
-
-
-⚙️ Setup Instructions
-1️⃣ Clone the repository
+### 1️⃣ Clone the repository
+```bash
 git clone https://github.com/<your-username>/ingredient-shield.git
 cd ingredient-shield
 
-2️⃣ Install dependencies
+### 2️⃣ Install Dependencies
 pip install -r requirements.txt
 
-3️⃣ Configure Google Vision credentials
-
-Create a file .env:
+### 3️⃣ Configure Google Cloud Vision
 GOOGLE_APPLICATION_CREDENTIALS="service-account.json"
-
 
 Load environment variables:
 export $(grep -v '^#' .env | xargs)
 
-4️⃣ Run the FastAPI server
+###4️⃣ Run the backend
 uvicorn main:app --reload
 
-5️⃣ Open API docs
-http://127.0.0.1:8000/docs
+###5️⃣ Test API (Swagger UI)
+
+###6️⃣ Use the Frontend
+Open index.html in your browser.
 
 
-This page allows you to upload images and test requests directly.
-🧪 Example API Call
-curl -X POST "http://127.0.0.1:8000/analyze" \
-  -F "image=@sample.jpg" \
-  -F 'conditions=["soy_allergy","diabetes"]'
 
-🛡️ How Risk Evaluation Works
-OCR text is normalized
-Ingredient parser extracts a clean list
+## API returns:
 
-For each health condition:
-avoid keywords subtract 40 points
-caution keywords subtract 15 points
-
-Verdict logic:
-Any avoid → Avoid
-Any caution → Caution
-None → Safe
-
-Returns structured output with:
 verdict
+
 score
+
 reasons
-ingredients
+
+ingredients with research links
+
 ocr_text
 
-🚀 Roadmap
-
-LLM-based ingredient classification
-
-Nutrition facts OCR parsing
-
-Ingredient database enrichment
-
-User accounts + saved scans
-
-Mobile-friendly UI
-
-Docker deployment
+disclaimer
+git clone https://github.com/<your-username>/ingredient-shield.git
+cd ingredient-shield
