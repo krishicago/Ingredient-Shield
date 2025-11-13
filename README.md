@@ -85,5 +85,4 @@ curl -X POST "http://127.0.0.1:8000/analyze" \
 - ingredients with research links
 - ocr_text
 - disclaimer
-git clone https://github.com/<your-username>/ingredient-shield.git
-cd ingredient-shield
+
